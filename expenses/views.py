@@ -1,9 +1,10 @@
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from .models import Expense
-
+from django.contrib.auth.forms import UserCreationForm
 class ExpenseListView(LoginRequiredMixin, ListView):
     model = Expense
     template_name = 'expenses/expense_list.html'
@@ -50,3 +51,22 @@ class ExpenseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Expense deleted successfully.")
         return super().delete(request, *args, **kwargs)
+
+
+from django.contrib.auth import logout
+
+def custom_logout(request):
+    logout(request)
+    messages.info(request, "You have been logged out successfully.")
+    return redirect('login')
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Account created successfully! You can now log in.")
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'signup.html', {'form': form})

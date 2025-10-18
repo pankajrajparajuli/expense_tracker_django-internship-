@@ -3,19 +3,25 @@
 <head>
   <title>Expense Tracker</title>
   <style>
-    body { font-family: Arial; margin: 40px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    body { font-family: Arial; margin: 40px; background-color: #f7f7f7; }
+    .container { max-width: 400px; margin: 60px auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; }
+    form { display: flex; flex-direction: column; gap: 10px; }
+    button { background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    p { text-align: center; }
   </style>
 </head>
 <body>
-  {% if messages %}
-    <ul>
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-  {% block content %}{% endblock %}
+  <div class="container">
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
 </body>
 </html>
