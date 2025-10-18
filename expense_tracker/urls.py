@@ -18,6 +18,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from expenses import views as expense_views
+from django.shortcuts import redirect
+
+
+#Redirect logged-in users to Dashboard amd unauthenticated users to Login
+def home_redirect(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return redirect('login')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,5 +33,7 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', expense_views.custom_logout, name='logout'),
     path('signup/', expense_views.signup, name='signup'),
+    path('', home_redirect, name='home'),
+    
 ]
 
