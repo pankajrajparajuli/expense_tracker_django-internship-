@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -6,7 +7,9 @@ from django.contrib import messages
 from .models import Expense
 from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Sum
-
+from django.contrib.auth import logout
+from datetime import datetime
+from plotly import graph_objs as go
 class ExpenseListView(LoginRequiredMixin, ListView):
     model = Expense
     template_name = 'expenses/expense_list.html'
@@ -76,8 +79,52 @@ class ExpenseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         messages.success(self.request, "Expense deleted successfully.")
         return super().delete(request, *args, **kwargs)
 
+def dashboard(request):
+    expenses = Expense.objects.all().order_by('-date')[:10]
+    current_month = datetime.now().month
 
-from django.contrib.auth import logout
+    total_monthly = Expense.objects.filter(date__month=current_month).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    category_sums = Expense.objects.values('category').annotate(total=Sum('amount'))
+    top_category = max(category_sums, key=lambda x: x['total'])['category'] if category_sums else 'N/A'
+
+    # Pie Chart: category-wise
+    category_data = {
+        'data': [go.Pie(labels=[c['category'] for c in category_sums],
+                        values=[c['total'] for c in category_sums],
+                        marker=dict(colors=['#4a90e2','#50e3c2','#f5a623','#9013fe','#b8e986']))],
+        'layout': go.Layout(margin=dict(t=20, b=20, l=20, r=20))
+    }
+
+    # Line Chart: expenses over time
+    daily_expenses = (
+        Expense.objects
+        .values('date')
+        .annotate(total=Sum('amount'))
+        .order_by('date')
+    )
+
+    trend_data = {
+        'data': [go.Scatter(
+            x=[d['date'] for d in daily_expenses],
+            y=[d['total'] for d in daily_expenses],
+            mode='lines+markers',
+            line=dict(color='#4a90e2', width=2)
+        )],
+        'layout': go.Layout(margin=dict(t=20, b=40, l=40, r=20))
+    }
+
+    context = {
+        'total_monthly': total_monthly,
+        'top_category': top_category,
+        'total_count': Expense.objects.count(),
+        'recent_expenses': expenses,
+        'category_data': json.dumps(category_data),
+        'trend_data': json.dumps(trend_data),
+    }
+
+    return render(request, 'dashboard.html', context)
+
 
 def custom_logout(request):
     logout(request)

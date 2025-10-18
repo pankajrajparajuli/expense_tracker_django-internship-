@@ -6,4 +6,5 @@ urlpatterns = [
     path('create/', views.ExpenseCreateView.as_view(), name='expense-create'),
     path('<int:pk>/edit/', views.ExpenseUpdateView.as_view(), name='expense-edit'),
     path('<int:pk>/delete/', views.ExpenseDeleteView.as_view(), name='expense-delete'),
+    path('dashboard/', views.dashboard, name='dashboard'),
 ]
