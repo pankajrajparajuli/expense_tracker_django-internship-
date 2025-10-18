@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'expenses',
 ]
 
-LOGIN_REDIRECT_URL = '/expenses/'
+LOGIN_REDIRECT_URL = '/expenses/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
