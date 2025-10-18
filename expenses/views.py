@@ -84,23 +84,21 @@ class ExpenseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         messages.success(self.request, "Expense deleted successfully.")
         return super().delete(request, *args, **kwargs)
 
+
 @login_required
 def dashboard(request):
     user = request.user
-
-    # ✅ Only fetch this user's expenses
     expenses = Expense.objects.filter(user=user).order_by('-date')[:10]
     current_month = datetime.now().month
 
-    # ✅ Total for current month for this user
+    # === Monthly total ===
     total_monthly = (
         Expense.objects
         .filter(user=user, date__month=current_month)
-        .aggregate(Sum('amount'))['amount__sum']
-        or 0
+        .aggregate(Sum('amount'))['amount__sum'] or 0
     )
 
-    # ✅ Category breakdown for this user
+    # === Category breakdown (Pie Chart) ===
     category_sums = (
         Expense.objects
         .filter(user=user)
@@ -109,7 +107,6 @@ def dashboard(request):
     )
     top_category = max(category_sums, key=lambda x: x['total'])['category'] if category_sums else 'N/A'
 
-    # === Pie Chart (category distribution) ===
     pie = go.Figure(
         data=[go.Pie(
             labels=[c['category'] for c in category_sums],
@@ -117,8 +114,9 @@ def dashboard(request):
             hole=0.4
         )]
     )
+    pie.update_layout(margin=dict(l=20, r=20, t=20, b=20))
 
-    # === Line Chart (daily expenses trend) ===
+    # === DAILY Expenses (non-cumulative) ===
     daily_expenses = (
         Expense.objects
         .filter(user=user)
@@ -127,17 +125,55 @@ def dashboard(request):
         .order_by('date')
     )
 
-    line = go.Figure(
+    line_daily = go.Figure(
         data=[go.Scatter(
-            x=[d['date'] for d in daily_expenses],
+            x=[d['date'].strftime('%d %b') for d in daily_expenses],
             y=[d['total'] for d in daily_expenses],
-            mode='lines+markers'
+            mode='lines+markers',
+            line=dict(color='#4a90e2', width=3),
+            marker=dict(size=7),
+            name="Daily Spending"
         )]
     )
+    line_daily.update_layout(
+        yaxis_title="Amount (Rs)",
+        xaxis_title="Day",
+        margin=dict(l=20, r=20, t=30, b=20),
+        hovermode="x unified"
+    )
 
-    # ✅ Convert Plotly figures to JSON for rendering
+    # === WEEKLY Expenses ===
+    # Compute ISO week and sum per week
+    weekly_expenses = (
+        Expense.objects
+        .filter(user=user)
+        .extra(select={'week': "strftime('%%W', date)"})  # for SQLite; for PostgreSQL: Extract(week from date)
+        .values('week')
+        .annotate(total=Sum('amount'))
+        .order_by('week')
+    )
+
+    line_weekly = go.Figure(
+        data=[go.Scatter(
+            x=[f"Week {int(d['week'])}" for d in weekly_expenses],
+            y=[d['total'] for d in weekly_expenses],
+            mode='lines+markers',
+            line=dict(color='#50e3c2', width=3),
+            marker=dict(size=7),
+            name="Weekly Spending"
+        )]
+    )
+    line_weekly.update_layout(
+        yaxis_title="Amount (Rs)",
+        xaxis_title="Week Number",
+        margin=dict(l=20, r=20, t=30, b=20),
+        hovermode="x unified"
+    )
+
+    # === Convert to JSON for frontend ===
     category_data = json.dumps(pie, cls=plotly.utils.PlotlyJSONEncoder)
-    trend_data = json.dumps(line, cls=plotly.utils.PlotlyJSONEncoder)
+    trend_daily = json.dumps(line_daily, cls=plotly.utils.PlotlyJSONEncoder)
+    trend_weekly = json.dumps(line_weekly, cls=plotly.utils.PlotlyJSONEncoder)
 
     context = {
         'total_monthly': total_monthly,
@@ -145,10 +181,11 @@ def dashboard(request):
         'total_count': expenses.count(),
         'recent_expenses': expenses,
         'category_data': category_data,
-        'trend_data': trend_data,
+        'trend_daily': trend_daily,
+        'trend_weekly': trend_weekly,
     }
 
-    return render(request, 'dashboard.html', context)
+    return render(request, 'expenses/dashboard.html', context)
 
 
 def custom_logout(request):

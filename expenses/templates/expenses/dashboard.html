@@ -49,10 +49,43 @@
         color: #444;
     }
 
+    /* === Toggle Buttons === */
+    .toggle-group {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .toggle-btn {
+        border: 1px solid #4a90e2;
+        background: white;
+        color: #4a90e2;
+        padding: 8px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        margin: 0 5px;
+        transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+        background: #4a90e2;
+        color: white;
+    }
+
+    .toggle-btn:hover {
+        background: #4a90e2;
+        color: white;
+    }
+
+    /* === Table === */
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 15px;
+        background: var(--card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
     }
 
     th, td {
@@ -101,6 +134,10 @@
 
 <div class="chart">
     <h2>Spending Over Time</h2>
+    <div class="toggle-group">
+        <button id="dayBtn" class="toggle-btn active">By Day</button>
+        <button id="weekBtn" class="toggle-btn">By Week</button>
+    </div>
     <div id="trendChart" style="height:400px;"></div>
 </div>
 
@@ -123,10 +160,31 @@
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
+    // Get data from Django context
     const categoryData = {{ category_data|safe }};
-    const trendData = {{ trend_data|safe }};
+    const trendDaily = {{ trend_daily|safe }};
+    const trendWeekly = {{ trend_weekly|safe }};
 
-    Plotly.newPlot('categoryChart', JSON.parse(categoryData).data, JSON.parse(categoryData).layout);
-    Plotly.newPlot('trendChart', JSON.parse(trendData).data, JSON.parse(trendData).layout);
+    // Pie chart
+    Plotly.newPlot('categoryChart', categoryData.data, categoryData.layout);
+
+    // Default: daily trend
+    Plotly.newPlot('trendChart', trendDaily.data, trendDaily.layout);
+
+    // Toggle buttons
+    const dayBtn = document.getElementById('dayBtn');
+    const weekBtn = document.getElementById('weekBtn');
+
+    dayBtn.addEventListener('click', () => {
+        Plotly.newPlot('trendChart', trendDaily.data, trendDaily.layout);
+        dayBtn.classList.add('active');
+        weekBtn.classList.remove('active');
+    });
+
+    weekBtn.addEventListener('click', () => {
+        Plotly.newPlot('trendChart', trendWeekly.data, trendWeekly.layout);
+        weekBtn.classList.add('active');
+        dayBtn.classList.remove('active');
+    });
 </script>
 {% endblock %}

@@ -1,6 +1,76 @@
-{% extends 'base.html' %}
+{% extends 'base_auth.html' %}
+
+{% block extra_style %}
+<style>
+    h2 {
+        text-align: center;
+        color: var(--primary);
+        font-weight: 600;
+        margin-bottom: 25px;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 15px;
+        background-color: #f9f9f9;
+        transition: border-color 0.2s;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+
+    button:hover {
+        background: #3b7acc;
+    }
+
+    p {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 15px;
+    }
+
+    p a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    p a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
   <h2>Login</h2>
+
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

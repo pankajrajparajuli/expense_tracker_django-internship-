@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Tracker</title>
+  <style>
+    :root {
+      --bg: #f8f9fb;
+      --card-bg: #fff;
+      --text: #333;
+      --primary: #4a90e2;
+      --shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: "Inter", Arial, sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 80px auto;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 40px;
+    }
+
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
