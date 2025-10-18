@@ -48,3 +48,18 @@
   {% endfor %}
 </table>
 {% endblock %}
+
+<div style="margin-top: 20px; text-align: center;">
+  {% if is_paginated %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">&laquo; Prev</a>
+      {% endif %}
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+<a href="{% url 'dashboard' %}" style="display:inline-block;margin-top:15px;color:#4a90e2;">← Back to Dashboard</a>

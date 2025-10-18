@@ -1,166 +1,132 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Expense Dashboard</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style>
-        /* === Base Styling === */
-        :root {
-            --bg: #f8f9fb;
-            --card-bg: #fff;
-            --text: #333;
-            --primary: #4a90e2;
-            --shadow: 0 2px 6px rgba(0,0,0,0.08);
-        }
+{% extends 'base.html' %}
 
-        body {
-            font-family: "Inter", Arial, sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            padding: 0;
-            color: var(--text);
-        }
+{% block extra_style %}
+<style>
+    /* === Dashboard Custom Styling === */
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-weight: 600;
+        color: var(--primary);
+    }
 
-        .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            padding: 30px 40px;
-        }
+    .cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between;
+    }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-weight: 600;
-            color: var(--primary);
-        }
+    .card {
+        flex: 1;
+        min-width: 220px;
+        background: var(--card-bg);
+        box-shadow: var(--shadow);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
 
-        /* === Cards === */
-        .cards {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: space-between;
-        }
+    .card h2 {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 10px;
+    }
 
-        .card {
-            flex: 1;
-            min-width: 220px;
-            background: var(--card-bg);
-            box-shadow: var(--shadow);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
+    .card p {
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--primary);
+    }
 
-        .card h2 {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 10px;
-        }
+    .chart {
+        margin-top: 40px;
+    }
 
-        .card p {
-            font-size: 22px;
-            font-weight: 600;
-            color: var(--primary);
-        }
+    .chart h2 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #444;
+    }
 
-        /* === Charts === */
-        .chart {
-            margin-top: 40px;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
 
-        .chart h2 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #444;
-        }
+    th, td {
+        text-align: left;
+        padding: 12px 8px;
+        border-bottom: 1px solid #eee;
+    }
 
-        /* === Table === */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
+    th {
+        background: #f1f3f6;
+        font-weight: 600;
+    }
 
-        th, td {
-            text-align: left;
-            padding: 12px 8px;
-            border-bottom: 1px solid #eee;
-        }
+    tr:hover {
+        background-color: #f9fafc;
+    }
 
-        th {
-            background: #f1f3f6;
-            font-weight: 600;
-        }
+    @media (max-width: 768px) {
+        .cards { flex-direction: column; }
+    }
+</style>
+{% endblock %}
 
-        tr:hover {
-            background-color: #f9fafc;
-        }
+{% block content %}
+<h1>Expense Dashboard</h1>
 
-        /* === Responsive === */
-        @media (max-width: 768px) {
-            .cards {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Expense Dashboard</h1>
-
-        <div class="cards">
-            <div class="card">
-                <h2>Total This Month</h2>
-                <p>Rs {{ total_monthly }}</p>
-            </div>
-            <div class="card">
-                <h2>Highest Category</h2>
-                <p>{{ top_category }}</p>
-            </div>
-            <div class="card">
-                <h2>Total Entries</h2>
-                <p>{{ total_count }}</p>
-            </div>
-        </div>
-
-        <div class="chart">
-            <h2>Expenses by Category</h2>
-            <div id="categoryChart" style="height:400px;"></div>
-        </div>
-
-        <div class="chart">
-            <h2>Spending Over Time</h2>
-            <div id="trendChart" style="height:400px;"></div>
-        </div>
-
-        <div class="chart">
-            <h2>Recent Expenses</h2>
-            <table>
-                <tr><th>Date</th><th>Category</th><th>Amount</th><th>Description</th></tr>
-                {% for expense in recent_expenses %}
-                <tr>
-                    <td>{{ expense.date }}</td>
-                    <td>{{ expense.category }}</td>
-                    <td>Rs {{ expense.amount }}</td>
-                    <td>{{ expense.description }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
+<div class="cards">
+    <div class="card">
+        <h2>Total This Month</h2>
+        <p>Rs {{ total_monthly }}</p>
     </div>
+    <div class="card">
+        <h2>Highest Category</h2>
+        <p>{{ top_category }}</p>
+    </div>
+    <div class="card">
+        <h2>Total Entries</h2>
+        <p>{{ total_count }}</p>
+    </div>
+</div>
 
-    <script>
-        // Get Plotly data from Django
-        const categoryData = {{ category_data|safe }};
-        const trendData = {{ trend_data|safe }};
+<div class="chart">
+    <h2>Expenses by Category</h2>
+    <div id="categoryChart" style="height:400px;"></div>
+</div>
 
-        Plotly.newPlot('categoryChart', categoryData.data, categoryData.layout);
-        Plotly.newPlot('trendChart', trendData.data, trendData.layout);
-    </script>
-</body>
-</html>
+<div class="chart">
+    <h2>Spending Over Time</h2>
+    <div id="trendChart" style="height:400px;"></div>
+</div>
+
+<div class="chart">
+    <h2>Recent Expenses</h2>
+    <table>
+        <tr><th>Date</th><th>Category</th><th>Amount</th><th>Title</th></tr>
+        {% for expense in recent_expenses %}
+        <tr>
+            <td>{{ expense.date }}</td>
+            <td>{{ expense.category }}</td>
+            <td>Rs {{ expense.amount }}</td>
+            <td>{{ expense.title }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;">No recent expenses</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    const categoryData = {{ category_data|safe }};
+    const trendData = {{ trend_data|safe }};
+
+    Plotly.newPlot('categoryChart', JSON.parse(categoryData).data, JSON.parse(categoryData).layout);
+    Plotly.newPlot('trendChart', JSON.parse(trendData).data, JSON.parse(trendData).layout);
+</script>
+{% endblock %}

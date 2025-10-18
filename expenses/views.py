@@ -10,10 +10,15 @@ from django.db.models import Sum
 from django.contrib.auth import logout
 from datetime import datetime
 from plotly import graph_objs as go
+import plotly
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+
 class ExpenseListView(LoginRequiredMixin, ListView):
     model = Expense
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
+    paginate_by = 10  # ✅ show 10 per page
 
     def get_queryset(self):
         queryset = Expense.objects.filter(user=self.request.user)
@@ -27,7 +32,7 @@ class ExpenseListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(date__gte=start_date)
         if end_date:
             queryset = queryset.filter(date__lte=end_date)
-        return queryset
+        return queryset.order_by('-date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -79,48 +84,68 @@ class ExpenseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         messages.success(self.request, "Expense deleted successfully.")
         return super().delete(request, *args, **kwargs)
 
+@login_required
 def dashboard(request):
-    expenses = Expense.objects.all().order_by('-date')[:10]
+    user = request.user
+
+    # ✅ Only fetch this user's expenses
+    expenses = Expense.objects.filter(user=user).order_by('-date')[:10]
     current_month = datetime.now().month
 
-    total_monthly = Expense.objects.filter(date__month=current_month).aggregate(Sum('amount'))['amount__sum'] or 0
+    # ✅ Total for current month for this user
+    total_monthly = (
+        Expense.objects
+        .filter(user=user, date__month=current_month)
+        .aggregate(Sum('amount'))['amount__sum']
+        or 0
+    )
 
-    category_sums = Expense.objects.values('category').annotate(total=Sum('amount'))
+    # ✅ Category breakdown for this user
+    category_sums = (
+        Expense.objects
+        .filter(user=user)
+        .values('category')
+        .annotate(total=Sum('amount'))
+    )
     top_category = max(category_sums, key=lambda x: x['total'])['category'] if category_sums else 'N/A'
 
-    # Pie Chart: category-wise
-    category_data = {
-        'data': [go.Pie(labels=[c['category'] for c in category_sums],
-                        values=[c['total'] for c in category_sums],
-                        marker=dict(colors=['#4a90e2','#50e3c2','#f5a623','#9013fe','#b8e986']))],
-        'layout': go.Layout(margin=dict(t=20, b=20, l=20, r=20))
-    }
+    # === Pie Chart (category distribution) ===
+    pie = go.Figure(
+        data=[go.Pie(
+            labels=[c['category'] for c in category_sums],
+            values=[c['total'] for c in category_sums],
+            hole=0.4
+        )]
+    )
 
-    # Line Chart: expenses over time
+    # === Line Chart (daily expenses trend) ===
     daily_expenses = (
         Expense.objects
+        .filter(user=user)
         .values('date')
         .annotate(total=Sum('amount'))
         .order_by('date')
     )
 
-    trend_data = {
-        'data': [go.Scatter(
+    line = go.Figure(
+        data=[go.Scatter(
             x=[d['date'] for d in daily_expenses],
             y=[d['total'] for d in daily_expenses],
-            mode='lines+markers',
-            line=dict(color='#4a90e2', width=2)
-        )],
-        'layout': go.Layout(margin=dict(t=20, b=40, l=40, r=20))
-    }
+            mode='lines+markers'
+        )]
+    )
+
+    # ✅ Convert Plotly figures to JSON for rendering
+    category_data = json.dumps(pie, cls=plotly.utils.PlotlyJSONEncoder)
+    trend_data = json.dumps(line, cls=plotly.utils.PlotlyJSONEncoder)
 
     context = {
         'total_monthly': total_monthly,
         'top_category': top_category,
-        'total_count': Expense.objects.count(),
+        'total_count': expenses.count(),
         'recent_expenses': expenses,
-        'category_data': json.dumps(category_data),
-        'trend_data': json.dumps(trend_data),
+        'category_data': category_data,
+        'trend_data': trend_data,
     }
 
     return render(request, 'dashboard.html', context)

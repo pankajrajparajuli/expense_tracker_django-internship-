@@ -1,18 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Expense Tracker</title>
   <style>
-    body { font-family: Arial; margin: 40px; background-color: #f7f7f7; }
-    .container { max-width: 400px; margin: 60px auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2 { text-align: center; }
-    form { display: flex; flex-direction: column; gap: 10px; }
-    button { background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    p { text-align: center; }
+    :root {
+      --bg: #f8f9fb;
+      --card-bg: #fff;
+      --text: #333;
+      --primary: #4a90e2;
+      --shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: "Inter", Arial, sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text);
+    }
+
+    /* === Navbar === */
+    .navbar {
+      background: var(--card-bg);
+      box-shadow: var(--shadow);
+      padding: 12px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .navbar .logo {
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 18px;
+    }
+
+    .navbar a {
+      text-decoration: none;
+      color: var(--text);
+      margin-left: 20px;
+      font-size: 15px;
+      transition: color 0.2s;
+    }
+
+    .navbar a:hover {
+      color: var(--primary);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 30px 40px;
+    }
+
+    {% block extra_style %}{% endblock %}
   </style>
 </head>
 <body>
+
+  <nav class="navbar">
+    <div class="logo">💰 Expense Tracker</div>
+    <div>
+      <a href="{% url 'dashboard' %}">Dashboard</a>
+      <a href="{% url 'expense-create' %}">Add Expense</a>
+      <a href="{% url 'expense-list' %}">Expense List</a>
+      <a href="{% url 'logout' %}">Logout</a>
+    </div>
+  </nav>
+
   <div class="container">
     {% if messages %}
       <ul>
@@ -21,7 +83,9 @@
         {% endfor %}
       </ul>
     {% endif %}
+
     {% block content %}{% endblock %}
   </div>
+
 </body>
 </html>
