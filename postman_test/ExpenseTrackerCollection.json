@@ -1,0 +1,262 @@
+{
+  "info": {
+    "_postman_id": "d6f0243d-709b-47b8-b1d0-1234567890ab",
+    "name": "Expense Tracker Django App",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Signup User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "testuser"
+            },
+            {
+              "key": "password1",
+              "value": "Testpass123"
+            },
+            {
+              "key": "password2",
+              "value": "Testpass123"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/signup/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "signup",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Login User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var csrftoken = pm.cookies.get('csrftoken');",
+              "var sessionid = pm.cookies.get('sessionid');",
+              "pm.environment.set('csrftoken', csrftoken);",
+              "pm.environment.set('sessionid', sessionid);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "testuser"
+            },
+            {
+              "key": "password",
+              "value": "Testpass123"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/login/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "login",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Expenses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "csrftoken={{csrftoken}}; sessionid={{sessionid}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/expenses/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "expenses",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Expense",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "csrftoken={{csrftoken}}; sessionid={{sessionid}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "title",
+              "value": "Lunch"
+            },
+            {
+              "key": "amount",
+              "value": "12.50"
+            },
+            {
+              "key": "category",
+              "value": "Food"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/expenses/create/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "expenses",
+            "create",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Expense (id=1)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "csrftoken={{csrftoken}}; sessionid={{sessionid}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "title",
+              "value": "Lunch Updated"
+            },
+            {
+              "key": "amount",
+              "value": "15.00"
+            },
+            {
+              "key": "category",
+              "value": "Food"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/expenses/1/edit/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "expenses",
+            "1",
+            "edit",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Expense (id=1)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "csrftoken={{csrftoken}}; sessionid={{sessionid}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": []
+        },
+        "url": {
+          "raw": "{{base_url}}/expenses/1/delete/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "expenses",
+            "1",
+            "delete",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "csrftoken={{csrftoken}}; sessionid={{sessionid}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/logout/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "logout",
+            ""
+          ]
+        }
+      }
+    }
+  ]
+}
