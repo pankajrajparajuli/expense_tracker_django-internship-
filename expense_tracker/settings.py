@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'expenses',
 ]
 
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/expenses/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 

@@ -61,7 +61,8 @@ class ExpenseViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'expenses/dashboard.html')
         self.assertContains(response, 'Expense Dashboard')
-        self.assertContains(response, 'Hi, Testuser')
+        self.assertContains(response, 'Hi, <strong>Testuser</strong>')
+
 
     # =============================
     # 📋 Expense List View

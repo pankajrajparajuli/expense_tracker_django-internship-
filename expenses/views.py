@@ -21,14 +21,13 @@ from .models import Expense
 # 📋 Expense List View
 # ==============================
 class ExpenseListView(LoginRequiredMixin, ListView):
-    """Display a paginated list of user expenses with filters."""
     model = Expense
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
-    paginate_by = 10  # Show 10 items per page
+    paginate_by = 10
 
     def get_queryset(self):
-        """Filter expenses by user, category, and date range."""
+        """Filter expenses by user and optional filters."""
         queryset = Expense.objects.filter(user=self.request.user)
         category = self.request.GET.get('category')
         start_date = self.request.GET.get('start_date')
@@ -43,10 +42,21 @@ class ExpenseListView(LoginRequiredMixin, ListView):
         return queryset.order_by('-date')
 
     def get_context_data(self, **kwargs):
-        """Add total, categories, and filters to context."""
+        """Add totals, filters, and categories to context."""
         context = super().get_context_data(**kwargs)
         expenses = self.get_queryset()
-        context['total_amount'] = expenses.aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        total = expenses.aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        context['total_amount'] = total
+
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        monthly_total = (
+            Expense.objects
+            .filter(user=self.request.user, date__month=current_month, date__year=current_year)
+            .aggregate(total_month=Sum('amount'))['total_month'] or 0
+        )
+        context['monthly_total'] = monthly_total
+
         context['categories'] = Expense.CATEGORY_CHOICES
         context['selected_category'] = self.request.GET.get('category', 'All')
         context['start_date'] = self.request.GET.get('start_date', '')
