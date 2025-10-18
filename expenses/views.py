@@ -1,26 +1,34 @@
 import json
-from django.shortcuts import redirect, render
+from datetime import datetime
+
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
+from django.db.models import Sum
+from django.contrib import messages
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.contrib import messages
-from .models import Expense
-from django.contrib.auth.forms import UserCreationForm
-from django.db.models import Sum
-from django.contrib.auth import logout
-from datetime import datetime
+
 from plotly import graph_objs as go
 import plotly
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 
+from .models import Expense
+
+
+# ==============================
+# 📋 Expense List View
+# ==============================
 class ExpenseListView(LoginRequiredMixin, ListView):
+    """Display a paginated list of user expenses with filters."""
     model = Expense
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
-    paginate_by = 10  # ✅ show 10 per page
+    paginate_by = 10  # Show 10 items per page
 
     def get_queryset(self):
+        """Filter expenses by user, category, and date range."""
         queryset = Expense.objects.filter(user=self.request.user)
         category = self.request.GET.get('category')
         start_date = self.request.GET.get('start_date')
@@ -35,23 +43,29 @@ class ExpenseListView(LoginRequiredMixin, ListView):
         return queryset.order_by('-date')
 
     def get_context_data(self, **kwargs):
+        """Add total, categories, and filters to context."""
         context = super().get_context_data(**kwargs)
         expenses = self.get_queryset()
-        total = expenses.aggregate(total_amount=Sum('amount'))['total_amount'] or 0
-        context['total_amount'] = total
+        context['total_amount'] = expenses.aggregate(total_amount=Sum('amount'))['total_amount'] or 0
         context['categories'] = Expense.CATEGORY_CHOICES
         context['selected_category'] = self.request.GET.get('category', 'All')
         context['start_date'] = self.request.GET.get('start_date', '')
         context['end_date'] = self.request.GET.get('end_date', '')
         return context
 
+
+# ==============================
+# ➕ Expense Create View
+# ==============================
 class ExpenseCreateView(LoginRequiredMixin, CreateView):
+    """Allow user to add a new expense."""
     model = Expense
     fields = ['title', 'amount', 'category']
     template_name = 'expenses/expense_form.html'
     success_url = reverse_lazy('expense-list')
 
     def form_valid(self, form):
+        """Assign the current user and validate amount > 0."""
         form.instance.user = self.request.user
         if form.instance.amount <= 0:
             messages.error(self.request, "Amount must be greater than 0.")
@@ -59,46 +73,64 @@ class ExpenseCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "Expense added successfully.")
         return super().form_valid(form)
 
+
+# ==============================
+# ✏️ Expense Update View
+# ==============================
 class ExpenseUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Allow user to edit their own expense."""
     model = Expense
     fields = ['title', 'amount', 'category']
     template_name = 'expenses/expense_form.html'
     success_url = reverse_lazy('expense-list')
 
     def test_func(self):
+        """Ensure only the owner can update their expense."""
         return self.get_object().user == self.request.user
 
     def form_valid(self, form):
+        """Show success message on successful update."""
         messages.success(self.request, "Expense updated successfully.")
         return super().form_valid(form)
 
+
+# ==============================
+# ❌ Expense Delete View
+# ==============================
 class ExpenseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Allow user to delete their own expense."""
     model = Expense
     template_name = 'expenses/expense_confirm_delete.html'
     success_url = reverse_lazy('expense-list')
 
     def test_func(self):
+        """Ensure only the owner can delete their expense."""
         return self.get_object().user == self.request.user
 
     def delete(self, request, *args, **kwargs):
+        """Show success message after deletion."""
         messages.success(self.request, "Expense deleted successfully.")
         return super().delete(request, *args, **kwargs)
 
 
+# ==============================
+# 📊 Dashboard View
+# ==============================
 @login_required
 def dashboard(request):
+    """Render the dashboard with summary cards and charts."""
     user = request.user
     expenses = Expense.objects.filter(user=user).order_by('-date')[:10]
     current_month = datetime.now().month
 
-    # === Monthly total ===
+    # === Monthly Total ===
     total_monthly = (
         Expense.objects
         .filter(user=user, date__month=current_month)
         .aggregate(Sum('amount'))['amount__sum'] or 0
     )
 
-    # === Category breakdown (Pie Chart) ===
+    # === Pie Chart: Category Breakdown ===
     category_sums = (
         Expense.objects
         .filter(user=user)
@@ -116,7 +148,7 @@ def dashboard(request):
     )
     pie.update_layout(margin=dict(l=20, r=20, t=20, b=20))
 
-    # === DAILY Expenses (non-cumulative) ===
+    # === Line Chart: Daily Spending ===
     daily_expenses = (
         Expense.objects
         .filter(user=user)
@@ -142,12 +174,11 @@ def dashboard(request):
         hovermode="x unified"
     )
 
-    # === WEEKLY Expenses ===
-    # Compute ISO week and sum per week
+    # === Line Chart: Weekly Spending ===
     weekly_expenses = (
         Expense.objects
         .filter(user=user)
-        .extra(select={'week': "strftime('%%W', date)"})  # for SQLite; for PostgreSQL: Extract(week from date)
+        .extra(select={'week': "strftime('%%W', date)"})  # SQLite syntax
         .values('week')
         .annotate(total=Sum('amount'))
         .order_by('week')
@@ -170,11 +201,12 @@ def dashboard(request):
         hovermode="x unified"
     )
 
-    # === Convert to JSON for frontend ===
+    # === Convert Plotly Figures to JSON for Frontend ===
     category_data = json.dumps(pie, cls=plotly.utils.PlotlyJSONEncoder)
     trend_daily = json.dumps(line_daily, cls=plotly.utils.PlotlyJSONEncoder)
     trend_weekly = json.dumps(line_weekly, cls=plotly.utils.PlotlyJSONEncoder)
 
+    # === Prepare Context for Template ===
     context = {
         'total_monthly': total_monthly,
         'top_category': top_category,
@@ -185,21 +217,33 @@ def dashboard(request):
         'trend_weekly': trend_weekly,
     }
 
+    # === Render Dashboard ===
     return render(request, 'expenses/dashboard.html', context)
 
 
+# ==============================
+# 🚪 Custom Logout
+# ==============================
 def custom_logout(request):
+    """Log out user and show confirmation message."""
     logout(request)
     messages.info(request, "You have been logged out successfully.")
     return redirect('login')
 
+
+# ==============================
+# 🧍‍♂️ User Signup
+# ==============================
 def signup(request):
+    """Handle user registration using Django's built-in form."""
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Account created successfully! You can now log in.")
             return redirect('login')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = UserCreationForm()
     return render(request, 'signup.html', {'form': form})
