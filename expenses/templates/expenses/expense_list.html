@@ -1,11 +1,33 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Your Expenses</h2>
-<a href="{% url 'expense-create' %}">+ Add New Expense</a> | <a href="{% url 'logout' %}">Logout</a>
+
+<form method="get" style="margin-bottom: 20px;">
+  <label>Category:</label>
+  <select name="category">
+    <option value="All" {% if selected_category == "All" %}selected{% endif %}>All</option>
+    {% for key, value in categories %}
+      <option value="{{ key }}" {% if selected_category == key %}selected{% endif %}>{{ value }}</option>
+    {% endfor %}
+  </select>
+
+  <label>From:</label>
+  <input type="date" name="start_date" value="{{ start_date }}">
+  <label>To:</label>
+  <input type="date" name="end_date" value="{{ end_date }}">
+  <button type="submit">Filter</button>
+  <a href="{% url 'expense-list' %}">Reset</a>
+</form>
+
+<p><strong>Total Expense:</strong> €{{ total_amount }}</p>
+
+<a href="{% url 'expense-create' %}">+ Add New Expense</a> |
+<a href="{% url 'logout' %}">Logout</a>
+
 <table border="1" cellpadding="6">
   <tr>
     <th>Title</th>
-    <th>Amount</th>
+    <th>Amount (€)</th>
     <th>Category</th>
     <th>Date</th>
     <th>Actions</th>

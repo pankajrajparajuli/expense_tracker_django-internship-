@@ -5,13 +5,37 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from .models import Expense
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Sum
+
 class ExpenseListView(LoginRequiredMixin, ListView):
     model = Expense
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
 
     def get_queryset(self):
-        return Expense.objects.filter(user=self.request.user)
+        queryset = Expense.objects.filter(user=self.request.user)
+        category = self.request.GET.get('category')
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+
+        if category and category != "All":
+            queryset = queryset.filter(category=category)
+        if start_date:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        expenses = self.get_queryset()
+        total = expenses.aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        context['total_amount'] = total
+        context['categories'] = Expense.CATEGORY_CHOICES
+        context['selected_category'] = self.request.GET.get('category', 'All')
+        context['start_date'] = self.request.GET.get('start_date', '')
+        context['end_date'] = self.request.GET.get('end_date', '')
+        return context
 
 class ExpenseCreateView(LoginRequiredMixin, CreateView):
     model = Expense
