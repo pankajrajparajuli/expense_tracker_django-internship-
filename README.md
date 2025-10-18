@@ -22,8 +22,8 @@ A simple and secure **Expense Tracking Web Application** built with the **Django
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/yourusername/expense-tracker.git
-cd expense-tracker
+git clone https://github.com/pankajrajparajuli/expense_tracker_django-internship-.git
+cd expense_tracker
 ```
 
 ### 2️⃣ Create Virtual Environment & Activate
